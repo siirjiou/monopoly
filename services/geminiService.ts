@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { CardType, CardEffect, CardAction } from '../types';
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!API_KEY) {
   console.error("API_KEY environment variable not set.");
@@ -10,7 +10,7 @@ if (!API_KEY) {
   // The app will have a fallback mechanism.
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
 const generatePrompt = (cardType: CardType) => {
   return `You are a creative game master for a Monopoly-like board game. 
@@ -87,14 +87,14 @@ const FALLBACK_CARDS: Record<CardType, CardEffect[]> = {
 };
 
 export const generateCardEvent = async (cardType: CardType): Promise<CardEffect> => {
-    if (!API_KEY) {
+    if (!API_KEY || !ai) {
         console.warn("Gemini API key not found. Using fallback card.");
         const fallback = FALLBACK_CARDS[cardType];
         return fallback[Math.floor(Math.random() * fallback.length)];
     }
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await ai!.models.generateContent({
             model: "gemini-2.5-flash",
             contents: generatePrompt(cardType),
             config: {
